@@ -1,6 +1,6 @@
 /pkg
 /build
-/bin
+# /bin
 *.swp
 *.iml
 tags
