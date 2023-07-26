@@ -81,6 +81,18 @@ func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs i
 		return
 	}
 
+	// Fix CORS error: https://github.com/aws/aws-lambda-runtime-interface-emulator/pull/84/files#diff-2c1a36d379bd5ed6e893749912ac8473cc46dddf5765024d46b44da2eb56348d
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", GetenvWithDefault("ACCESS_CONTROL_ALLOW_ORIGIN", origin))
+		w.Header().Set("Access-Control-Allow-Methods", GetenvWithDefault("ACCESS_CONTROL_ALLOW_METHODS", "POST, OPTIONS"))
+		w.Header().Set("Access-Control-Allow-Headers", GetenvWithDefault("ACCESS_CONTROL_ALLOW_HEADERS", "*"))
+		w.Header().Set("Access-Control-Allow-Credentials", GetenvWithDefault("ACCESS_CONTROL_ALLOW_CREDENTIALS", "true"))
+	}
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(200)
+		return
+	}
+
 	initDuration := ""
 	inv := GetenvWithDefault("AWS_LAMBDA_FUNCTION_TIMEOUT", "300")
 	timeoutDuration, _ := time.ParseDuration(inv + "s")
