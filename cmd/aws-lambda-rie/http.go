@@ -4,6 +4,8 @@
 package main
 
 import (
+	"os"
+	"strconv"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -16,13 +18,41 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 		Addr: ipport,
 	}
 
+	maxInvocations := -1 // -1 means unlimited invocations
+	// Get max invocations from environment variable
+	if maxInvocationsStr := os.Getenv("AWS_LAMBDA_SERVER_MAX_INVOCATIONS"); maxInvocationsStr != "" {
+		if maxInvocationsInt, err := strconv.Atoi(maxInvocationsStr); err == nil {
+			maxInvocations = maxInvocationsInt
+		} else {
+			log.Panicf("Invalid value for AWS_LAMBDA_SERVER_MAX_INVOCATIONS: %s", maxInvocationsStr)
+		}
+	}
+
+	// Channel to signal server shutdown
+	shutdownChan := make(chan struct{})
+
 	// Pass a channel
 	http.HandleFunc("/2015-03-31/functions/function/invocations", func(w http.ResponseWriter, r *http.Request) {
 		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs)
+
+		// Shutdown the server if we've reached the maximum number of invocations
+		maxInvocations--
+		if maxInvocations == 0 {
+			close(shutdownChan)
+		}
 	})
 
-	// go routine (main thread waits)
-	if err := srv.ListenAndServe(); err != nil {
+
+	// go routine to handle server shutdown (main thread waits)
+	go func() {
+		<-shutdownChan
+		log.Printf("Maximum invocations (%d) reached. Shutting down the server.", maxInvocations)
+		if err := srv.Shutdown(nil); err != nil {
+			log.Panic(err)
+		}
+	}()
+
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Panic(err)
 	}
 
