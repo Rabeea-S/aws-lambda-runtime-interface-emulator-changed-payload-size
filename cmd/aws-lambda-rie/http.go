@@ -5,6 +5,7 @@ package main
 
 import (
 	"os"
+	"time"
 	"strconv"
 	"net/http"
 
@@ -47,6 +48,7 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 	go func() {
 		<-shutdownChan
 		log.Printf("Maximum invocations (%d) reached. Shutting down the server.", maxInvocations)
+		time.Sleep(60 * time.Second) // Grace period for client to receive the response
 		if err := srv.Shutdown(nil); err != nil {
 			log.Panic(err)
 		}
