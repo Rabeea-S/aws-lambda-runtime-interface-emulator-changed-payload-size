@@ -72,7 +72,7 @@ func printEndReports(invokeId string, initDuration string, memorySize string, in
 		invokeId, invokeDuration, math.Ceil(invokeDuration), memorySize, memorySize)
 }
 
-func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs interop.Bootstrap) {
+func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs interop.Bootstrap, done chan<- struct{}) {
 	log.Debugf("invoke: -> %s %s %v", r.Method, r.URL, r.Header)
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -190,6 +190,8 @@ func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs i
 		w.WriteHeader(invokeResp.StatusCode)
 	}
 	w.Write(invokeResp.Body)
+
+	close(done) // Signal that the InvokeHandler has completed its execution
 }
 
 func InitHandler(sandbox Sandbox, functionVersion string, timeout int64, bs interop.Bootstrap) (time.Time, time.Time) {
