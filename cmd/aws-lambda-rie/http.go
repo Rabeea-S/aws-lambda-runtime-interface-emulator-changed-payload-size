@@ -39,10 +39,10 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 
 		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs, done)
 
-		<-done // Wait until the response has terminated
 		// Shutdown the server if we've reached the maximum number of invocations
 		maxInvocations--
 		if maxInvocations == 0 {
+			<-done // Wait until the response has terminated
 			close(shutdownChan)
 		}
 	})
