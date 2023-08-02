@@ -72,7 +72,7 @@ func printEndReports(invokeId string, initDuration string, memorySize string, in
 		invokeId, invokeDuration, math.Ceil(invokeDuration), memorySize, memorySize)
 }
 
-func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs interop.Bootstrap, doneCallback func()) {
+func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs interop.Bootstrap, doneCallback func(invokeResp *ResponseWriterProxy)) {
 	log.Debugf("invoke: -> %s %s %v", r.Method, r.URL, r.Header)
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -177,9 +177,11 @@ func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs i
 		case rapidcore.ErrInvokeTimeout:
 			printEndReports(invokePayload.ID, initDuration, memorySize, invokeStart, timeoutDuration)
 
-			w.Write([]byte(fmt.Sprintf("Task timed out after %d.00 seconds", timeout)))
+			invokeResp.Write([]byte(fmt.Sprintf("Task timed out after %d.00 seconds", timeout)))
+			w.Write(invokeResp.Body)	
 			time.Sleep(100 * time.Millisecond)
 			//initDone = false
+			doneCallback(invokeResp) // Call done after printEndReports
 			return
 		}
 	}
@@ -191,7 +193,7 @@ func InvokeHandler(w http.ResponseWriter, r *http.Request, sandbox Sandbox, bs i
 	}
 	w.Write(invokeResp.Body)
 
-	doneCallback() // Callback at end of InvokeHandler
+	doneCallback(invokeResp) // Call done after printEndReports
 }
 
 func InitHandler(sandbox Sandbox, functionVersion string, timeout int64, bs interop.Bootstrap) (time.Time, time.Time) {

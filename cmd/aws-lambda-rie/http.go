@@ -5,8 +5,11 @@ package main
 
 import (
 	"os"
+	"sync"
+	"bytes"
 	"strconv"
 	"net/http"
+	"encoding/json"
 
 	log "github.com/sirupsen/logrus"
 	"go.amzn.com/lambda/interop"
@@ -17,6 +20,8 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 	srv := &http.Server{
 		Addr: ipport,
 	}
+
+	log.Warnf("Listening on %s", ipport)
 
 	maxInvocations := -1 // -1 means unlimited invocations
 	// Get max invocations from environment variable
@@ -34,7 +39,41 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 
 	// Pass a channel
 	http.HandleFunc("/2015-03-31/functions/function/invocations", func(w http.ResponseWriter, r *http.Request) {
-		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs, func(){
+		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs, func(invokeResp *ResponseWriterProxy){
+
+			// Forward response if "forward-response" header exists
+			if forwardURL := r.Header.Get("forward-response"); forwardURL != "" {
+				// Create a wait group to wait for the API request to finish
+				var wg sync.WaitGroup
+				wg.Add(1)
+				go func() {
+					// Marshal the payload to JSON (you can use any other serialization format if needed)
+					apiPayloadJSON, err := json.Marshal(string(invokeResp.Body))
+					if err != nil {
+						log.Errorf("Failed to json marshal API payload: %s", err)
+						return
+					}
+
+					// Perform the API request to the URL in the "forward-response" header
+					resp, err := http.Post(forwardURL, "application/json", bytes.NewReader(apiPayloadJSON))
+					if err != nil {
+						log.Errorf("Failed to forward response: %s", err)
+						return
+					}
+					defer resp.Body.Close()
+					
+					if resp.StatusCode == 200 {
+						log.Printf("Forwarded response was successful")
+					} else {
+						log.Errorf("Forwarding response failed with status code: %d", resp.StatusCode)
+					}
+
+					defer wg.Done() // Defer the Done() call to mark the API request as completed
+				}()
+				
+				wg.Wait() // Wait for the API request to finish before proceeding
+			}
+
 			// Shutdown the server if the maximum number of invocations is reached
 			maxInvocations--
 			if maxInvocations == 0 {
@@ -47,7 +86,7 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 	// go routine to handle server shutdown (main thread waits)
 	go func() {
 		<-shutdownChan
-		log.Printf("Maximum invocations (%s) reached. Shutting down the server.", maxInvocationsStr)
+		log.Printf("Maximum invocations (%s) reached. Shutting down the server", maxInvocationsStr)
 		if err := srv.Shutdown(nil); err != nil {
 			log.Panic(err)
 		}
@@ -57,5 +96,4 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 		log.Panic(err)
 	}
 
-	log.Warnf("Listening on %s", ipport)
 }

@@ -173,6 +173,9 @@ The rest of these Environment Variables can be set to match AWS Lambda's environ
 * `AWS_LAMBDA_FUNCTION_MEMORY_SIZE`
 * `AWS_LAMBDA_SERVER_MAX_INVOCATIONS`
 
+Request headers:
+* `forward-response` to forward api response to server
+
 ## Level of support
 
 You can use the emulator to test if your function code is compatible with the Lambda environment, executes successfully
