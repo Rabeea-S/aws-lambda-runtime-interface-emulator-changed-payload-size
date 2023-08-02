@@ -5,7 +5,6 @@ package main
 
 import (
 	"os"
-	"time"
 	"strconv"
 	"net/http"
 
@@ -35,16 +34,13 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 
 	// Pass a channel
 	http.HandleFunc("/2015-03-31/functions/function/invocations", func(w http.ResponseWriter, r *http.Request) {
-		done := make(chan struct{}) // Channel to signal when the response has terminated
-
-		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs, done)
-
-		// Shutdown the server if we've reached the maximum number of invocations
-		maxInvocations--
-		if maxInvocations == 0 {
-			<-done // Wait until the response has terminated
-			close(shutdownChan)
-		}
+		InvokeHandler(w, r, sandbox.LambdaInvokeAPI(), bs, func(){
+			// Shutdown the server if the maximum number of invocations is reached
+			maxInvocations--
+			if maxInvocations == 0 {
+				close(shutdownChan)
+			}
+		})
 	})
 
 
@@ -52,7 +48,6 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 	go func() {
 		<-shutdownChan
 		log.Printf("Maximum invocations (%s) reached. Shutting down the server.", maxInvocationsStr)
-		time.Sleep(60 * time.Second) // Grace period for client to receive the response
 		if err := srv.Shutdown(nil); err != nil {
 			log.Panic(err)
 		}
