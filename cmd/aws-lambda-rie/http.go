@@ -54,8 +54,14 @@ func startHTTPServer(ipport string, sandbox *rapidcore.SandboxBuilder, bs intero
 						return
 					}
 
-					// Perform the API request to the URL in the "forward-response" header
-					resp, err := http.Post(forwardURL, "application/json", bytes.NewReader(apiPayloadJSON))
+					// Create an API request to the URL in the "forward-response" header
+					client := &http.Client{}
+					req, err := http.NewRequest("POST", forwardURL, bytes.NewReader(apiPayloadJSON))
+					// Add request headers
+					req.Header.Add("Authorization", "Token "+os.Getenv("API_ACCESS_KEY"))
+					req.Header.Add("Content-Type", "application/json")
+					// Send the request
+					resp, err := client.Do(req)
 					if err != nil {
 						log.Errorf("Failed to forward response: %s", err)
 						return

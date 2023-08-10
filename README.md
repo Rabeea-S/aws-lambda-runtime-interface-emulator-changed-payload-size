@@ -172,6 +172,7 @@ The rest of these Environment Variables can be set to match AWS Lambda's environ
 * `AWS_LAMBDA_FUNCTION_NAME`
 * `AWS_LAMBDA_FUNCTION_MEMORY_SIZE`
 * `AWS_LAMBDA_SERVER_MAX_INVOCATIONS`
+* `API_ACCESS_KEY`
 
 Request headers:
 * `forward-response` to forward api response to server
