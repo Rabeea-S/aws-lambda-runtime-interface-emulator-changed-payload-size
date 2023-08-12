@@ -7,6 +7,12 @@ if [ $# -ne 1 ]; then
 fi
 export _HANDLER="$1"
 
+# Set API_ACCESS_KEY if api_access_key.env exists
+if [ -f "${LAMBDA_TASK_ROOT}/api_access_key.env" ]; then
+  export API_ACCESS_KEY=$(cat ${LAMBDA_TASK_ROOT}/api_access_key.env)
+  rm -f ${LAMBDA_TASK_ROOT}/api_access_key.env
+fi
+
 RUNTIME_ENTRYPOINT=/var/runtime/bootstrap
 if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then
   exec /usr/local/bin/aws-lambda-rie $RUNTIME_ENTRYPOINT
