@@ -8,9 +8,9 @@ fi
 export _HANDLER="$1"
 
 # Set API_ACCESS_KEY if api_access_key.env exists
-if [ -f "${LAMBDA_TASK_ROOT}/api_access_key.env" ]; then
-  export API_ACCESS_KEY=$(cat ${LAMBDA_TASK_ROOT}/api_access_key.env)
-  rm -f ${LAMBDA_TASK_ROOT}/api_access_key.env
+if [ -f "/tmp/api_access_key.env" ]; then
+  export API_ACCESS_KEY=$(cat /tmp/api_access_key.env)
+  rm -f /tmp/api_access_key.env
 fi
 
 RUNTIME_ENTRYPOINT=/var/runtime/bootstrap
