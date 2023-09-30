@@ -7,17 +7,13 @@ if [ $# -ne 1 ]; then
 fi
 export _HANDLER="$1"
 
-# Set API_ACCESS_KEY if api_access_key exists
-if [ -f "${LAMBDA_TASK_ROOT}/.api_access_key" ]; then
-  export API_ACCESS_KEY=$(cat ${LAMBDA_TASK_ROOT}/.api_access_key)
-  chmod +w ${LAMBDA_TASK_ROOT}
-  rm -f ${LAMBDA_TASK_ROOT}/.api_access_key
-  chmod -w ${LAMBDA_TASK_ROOT}
-fi
+useradd -M user
+su -c "chmod -R 777 /home" user
+su -c "chmod -R 777 /tmp" user
 
 RUNTIME_ENTRYPOINT=/var/runtime/bootstrap
 if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then
-  exec /usr/local/bin/aws-lambda-rie $RUNTIME_ENTRYPOINT
+  exec sudo -u user /usr/local/bin/aws-lambda-rie $RUNTIME_ENTRYPOINT
 else
-  exec $RUNTIME_ENTRYPOINT
+  exec sudo -u user $RUNTIME_ENTRYPOINT
 fi
