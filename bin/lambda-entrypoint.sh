@@ -7,9 +7,9 @@ if [ $# -ne 1 ]; then
 fi
 export _HANDLER="$1"
 
-useradd -M user
-su -c "chmod -R 777 /home" user
-su -c "chmod -R 777 /tmp" user
+/usr/sbin/useradd -M user
+/bin/su -c "chmod -R 777 /home" user
+/bin/su -c "chmod -R 777 /tmp" user
 
 RUNTIME_ENTRYPOINT=/var/runtime/bootstrap
 if [ -z "${AWS_LAMBDA_RUNTIME_API}" ]; then
