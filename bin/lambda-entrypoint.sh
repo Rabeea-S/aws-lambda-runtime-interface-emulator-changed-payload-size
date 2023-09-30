@@ -10,7 +10,9 @@ export _HANDLER="$1"
 # Set API_ACCESS_KEY if api_access_key exists
 if [ -f "${LAMBDA_TASK_ROOT}/.api_access_key" ]; then
   export API_ACCESS_KEY=$(cat ${LAMBDA_TASK_ROOT}/.api_access_key)
+  chmod +w ${LAMBDA_TASK_ROOT}
   rm -f ${LAMBDA_TASK_ROOT}/.api_access_key
+  chmod -w ${LAMBDA_TASK_ROOT}
 fi
 
 RUNTIME_ENTRYPOINT=/var/runtime/bootstrap
