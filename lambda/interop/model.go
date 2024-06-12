@@ -20,7 +20,7 @@ import (
 
 // MaxPayloadSize max event body size declared as LAMBDA_EVENT_BODY_SIZE
 const (
-	MaxPayloadSize = 6*1024*1024 + 100 // 6 MiB + 100 bytes
+	MaxPayloadSize = 10 * 1024 * 1024 * 1024 + 100 // 10 GB + 100 bytes
 
 	ResponseBandwidthRate      = 2 * 1024 * 1024 // default average rate of 2 MiB/s
 	ResponseBandwidthBurstSize = 6 * 1024 * 1024 // default burst size of 6 MiB
