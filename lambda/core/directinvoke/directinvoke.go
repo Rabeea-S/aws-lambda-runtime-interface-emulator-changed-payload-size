@@ -317,7 +317,7 @@ func sendPayloadLimitedResponse(payload io.Reader, trailers http.Header, w http.
 	}
 
 	startReadingResponseMonoTimeMs := metering.Monotime()
-	written, err := io.Copy(w, io.LimitReader(payload, MaxDirectResponseSize+1)) // +1 because we do allow 10MB but not 10MB + 1 byte
+	written, err := io.Copy(w, io.LimitReader(payload, int64(MaxDirectResponseSize+1))) // +1 because we do allow 10MB but not 10MB + 1 byte
 
 	// non-streaming invoke request but runtime is streaming: set response trailers
 	if functionResponseMode == interop.FunctionResponseModeStreaming {
@@ -328,12 +328,12 @@ func sendPayloadLimitedResponse(payload io.Reader, trailers http.Header, w http.
 	if err != nil {
 		w.Header().Set(EndOfResponseTrailer, EndOfResponseTruncated)
 		err = &interop.ErrTruncatedResponse{}
-	} else if MaxDirectResponseSize != -1 && written == MaxDirectResponseSize+1 {
+	} else if MaxDirectResponseSize != -1 && written == int64(MaxDirectResponseSize+1) {
 		w.Header().Set(EndOfResponseTrailer, EndOfResponseOversized)
 		err = &interop.ErrorResponseTooLargeDI{
 			ErrorResponseTooLarge: interop.ErrorResponseTooLarge{
-				ResponseSize:    int(written),
-				MaxResponseSize: int(MaxDirectResponseSize),
+				ResponseSize:    int64(written),
+				MaxResponseSize: int64(MaxDirectResponseSize),
 			},
 		}
 	} else {

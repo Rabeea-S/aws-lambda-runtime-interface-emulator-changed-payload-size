@@ -320,9 +320,9 @@ func (s *Server) sendResponseUnsafe(invokeID string, additionalHeaders map[strin
 		if err != nil {
 			return fmt.Errorf("Failed to read response on %s: %s", invokeID, err)
 		}
-		if len(data) > interop.MaxPayloadSize {
+		if int64(len(data)) > interop.MaxPayloadSize {
 			return &interop.ErrorResponseTooLarge{
-				ResponseSize:    len(data),
+				ResponseSize:    int64(len(data)),
 				MaxResponseSize: interop.MaxPayloadSize,
 			}
 		}

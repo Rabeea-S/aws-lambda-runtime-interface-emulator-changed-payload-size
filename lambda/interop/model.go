@@ -20,7 +20,7 @@ import (
 
 // MaxPayloadSize max event body size declared as LAMBDA_EVENT_BODY_SIZE
 const (
-	MaxPayloadSize = 10 * 1024 * 1024 * 1024 + 100 // 10 GB + 100 bytes
+	MaxPayloadSize int64 = 10 * 1024 * 1024 * 1024 + 100 // 10 GB + 100 bytes
 
 	ResponseBandwidthRate      = 2 * 1024 * 1024 // default average rate of 2 MiB/s
 	ResponseBandwidthBurstSize = 6 * 1024 * 1024 // default burst size of 6 MiB
@@ -318,8 +318,8 @@ func (s *ErrTruncatedResponse) Error() string {
 
 // ErrorResponseTooLarge is returned when response Payload exceeds shared memory buffer size
 type ErrorResponseTooLarge struct {
-	MaxResponseSize int
-	ResponseSize    int
+	MaxResponseSize int64
+	ResponseSize    int64
 }
 
 // ErrorResponseTooLargeDI is used to reproduce ErrorResponseTooLarge behavior for Direct Invoke mode
